@@ -8,8 +8,6 @@ struct BFprogram {
 };
 
 struct BFinfo {
-  int* add;
-  int* add_index;
   int* shift;
   int* shift_index;
 };
@@ -40,7 +38,7 @@ BFprogram GetBFProgram() {
 
 BFreturn index_helper(BFprogram program, int index) {
   BFreturn info;
-  info.shifted = 0; info.traversed = 0;
+  info.shifted = 0; info.traversed = -1;
   if (program.program[index] == '<' || program.program[index] == '>') {
     while (program.program[index] == '<' || program.program[index] == '>') {
       program.program[index] == '<' ? info.shifted -= 1 : info.shifted += 1; 
@@ -55,26 +53,25 @@ BFreturn index_helper(BFprogram program, int index) {
     }
     return info;
   }
+  return info;
 }
 
 BFinfo GetBFinfo(BFprogram program) {
   BFinfo info; 
+  info.shift = new int[program.size];
+  info.shift_index = new int[program.size];
+
   int i = 0;
-  char last_instruction = 0; 
   while (i < program.size) {
+    if (program.program[i] == '<' || program.program[i] == '>' || program.program[i] == '+' || program.program[i] == '-') {
     BFreturn return_info = index_helper(program, i);    
-    if (program.program[i] == '<' || program.program[i] == '>') {
-      info.shift[i] = return_info.shifted;
-      info.shift_index[i] = return_info.traversed + i;
-    }
-    if (program.program[i] == '+' || program.program[i] == '-') {
-      info.shift[i] = return_info.shifted;
-      info.shift_index[i] = return_info.traversed + i;
+    info.shift[i] = return_info.shifted;
+    info.shift_index[i] = return_info.traversed + i;
+    // printf(" %i %i %i %c add|", info.shift[i], info.shift_index[i], i, program.program[i]);
+    i += return_info.traversed;
     }
     ++i;
-    printf("%u", return_info);
   }
-
   return info;
 }
 
@@ -101,7 +98,14 @@ int match_bracket(BFprogram program, int index, int* brackets) {
 int main () {
   auto start = chrono::high_resolution_clock::now();
   BFprogram program = GetBFProgram();
-  // GetBFinfo(program);
+  #define DEBUG 1
+  #if DEBUG == 1
+  #define INFO BFinfo info = GetBFinfo(program)
+  #else
+  #define INFO
+  #endif
+
+  INFO;
 
   int* brackets = new int[program.size]; 
   int i = 0;
@@ -124,16 +128,30 @@ int main () {
   long long int total_count = 0;
   while (program_pointer < program.size) {
     if (program.program[program_pointer] == '+') {
-      tape[tape_pointer] += 1;
+      #if DEBUG == 1
+      #define ADD(x) tape[tape_pointer] += info.shift[program_pointer]; \
+      program_pointer = info.shift_index[program_pointer]
+      #else 
+      #define ADD(x) tape[tape_pointer] += x
+      #endif
+      ADD(1);
     }
+
     else if (program.program[program_pointer] == '-') {
-      tape[tape_pointer] -= 1;
+      ADD(-1);
     }
     else if (program.program[program_pointer] == '<' && tape_pointer > 0) {
-      tape_pointer -= 1;
+      #if DEBUG == 1
+      #define TAPE(x) tape_pointer += info.shift[program_pointer]; \
+      program_pointer = info.shift_index[program_pointer]
+      #else
+      #define TAPE(x) tape_pointer += x
+      #endif
+
+      TAPE(-1);
     }
     else if (program.program[program_pointer] == '>') {
-      tape_pointer += 1;
+      TAPE(1);
     }
     else if (program.program[program_pointer] == '[' && tape[tape_pointer] == 0) {
       program_pointer = brackets[program_pointer];

@@ -125,49 +125,61 @@ int main () {
   int tape_pointer = 0;
   int tape[30000];
   int program_pointer = 0;
-  long long int total_count = 0;
+  // long long int total_count = 0;
+
+  #if DEBUG == 1
+  #define ADD(x) tape[tape_pointer] += info.shift[program_pointer]; \
+  program_pointer = info.shift_index[program_pointer]
+  #else 
+  #define ADD(x) tape[tape_pointer] += x
+  #endif
+
+  #if DEBUG == 1
+  #define TAPE(x) tape_pointer += info.shift[program_pointer]; \
+  program_pointer = info.shift_index[program_pointer]
+  #else
+  #define TAPE(x) tape_pointer += x
+  #endif
+  
   while (program_pointer < program.size) {
-    if (program.program[program_pointer] == '+') {
-      #if DEBUG == 1
-      #define ADD(x) tape[tape_pointer] += info.shift[program_pointer]; \
-      program_pointer = info.shift_index[program_pointer]
-      #else 
-      #define ADD(x) tape[tape_pointer] += x
-      #endif
-      ADD(1);
-    }
 
-    else if (program.program[program_pointer] == '-') {
-      ADD(-1);
-    }
-    else if (program.program[program_pointer] == '<' && tape_pointer > 0) {
-      #if DEBUG == 1
-      #define TAPE(x) tape_pointer += info.shift[program_pointer]; \
-      program_pointer = info.shift_index[program_pointer]
-      #else
-      #define TAPE(x) tape_pointer += x
-      #endif
+        
+    switch (program.program[program_pointer]) {
+      case '[':
+        if (tape[tape_pointer] == 0) {program_pointer = brackets[program_pointer];};
+        break;
 
-      TAPE(-1);
-    }
-    else if (program.program[program_pointer] == '>') {
-      TAPE(1);
-    }
-    else if (program.program[program_pointer] == '[' && tape[tape_pointer] == 0) {
-      program_pointer = brackets[program_pointer];
-    }
-    else if (program.program[program_pointer] == ']' && tape[tape_pointer] != 0) {
-      program_pointer = brackets[program_pointer];
-    }
-    else if (program.program[program_pointer] == '.') {
-      printf("%c", tape[tape_pointer] % 256);
-    }
-    // printf("%c ", program.program[program_pointer]);
+      case ']':
+        if (tape[tape_pointer] != 0) {program_pointer = brackets[program_pointer];};
+        break;
+
+      case '+':
+        ADD(1);
+        break;
+
+      case '-':
+        ADD(-1);
+        break;
+
+      case '<':
+        TAPE(-1);
+        break;
+
+      case '>':
+        TAPE(1);
+        break;
+      
+      case '.':
+        printf("%c", tape[tape_pointer] % 256);
+        break;
+        };
+    // ++total_count;
+
     ++program_pointer;
-    ++total_count;
-  }
 
-  printf("\n%u total count \n", total_count);
+    }
+
+  // printf("\n%u total count \n", total_count);
   auto end = chrono::high_resolution_clock::now();
   auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
   printf("\n%u duration\n", duration);
